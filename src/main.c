@@ -36,17 +36,12 @@ int main(int argc, char **argv) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        // 前景：白，画一个 40x40 的描边矩形（左上角 0,0）
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        const int x = 0, y = 0, w = 40, h = 40;
-        // 用 4 条线画出矩形边框（避免 SDL2/SDL3 对 Fill/DrawRect 命名差异）
-        SDL_RenderLine(renderer, x,     y,     x + w - 1, y);
-        SDL_RenderLine(renderer, x,     y,     x,         y + h - 1);
-        SDL_RenderLine(renderer, x+w-1, y,     x + w - 1, y + h - 1);
-        SDL_RenderLine(renderer, x,     y+h-1, x + w - 1, y + h - 1);
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // 红色前景
+        SDL_FRect r = {0.0f, 0.0f, 40.0f, 40.0f};
+        SDL_RenderFillRect(renderer, &r);
 
         SDL_RenderPresent(renderer);
-        SDL_Delay(16); // ~60 FPS
+        SDL_Delay(16);
     }
 
     SDL_DestroyRenderer(renderer);
