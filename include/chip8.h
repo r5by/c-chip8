@@ -5,6 +5,7 @@
 #include "mem.h"
 #include "regs.h"
 #include "stack.h"
+#include "keyboard.h"
 
 struct Chip8 {
     // ram
@@ -15,6 +16,9 @@ struct Chip8 {
 
     // stacks
     Stack chip8_stack;
+
+    // keyboard
+    Keyboard chip8_kbd;
     
 };
 

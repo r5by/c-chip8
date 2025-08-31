@@ -18,7 +18,7 @@ extern const char *EMULATOR_WINDOW_TITLE;
 /* ============================
  * Register configuration
  * ============================ */
-#define TOTAL_NUM_REGS         16            // total number of registers
+#define NUM_REGS         16            // total number of registers
 
 /* ============================
  * Stack configuration

@@ -27,6 +27,10 @@ static const uint8_t fontset[80] = {
     0xF0, 0x80, 0xF0, 0x80, 0x80  /* F */
 };
 
+static inline bool memory_addr_in_bounds(uint16_t addr) {
+    return addr >= 0 && addr < MEMORY_SIZE;
+}
+
 void memory_reset(Memory* m) {
     assert(m);
     memset(m->memory, 0, MEMORY_SIZE);
@@ -41,8 +45,11 @@ void memory_init(Memory* m) {
 }
 
 Chip8Status memory_read(const Memory* m, uint16_t addr, uint8_t* out_value) {
-    if (!m || !out_value) return CHIP8_ERR_NULL_ARG;
-    if (addr >= MEMORY_SIZE) {
+    CHIP8_CHECK_ARG(m);
+    CHIP8_CHECK_ARG(out_value);
+    if (!memory_addr_in_bounds(addr)) {
+        CHIP8_LOG_ERROR("Read RAM address OOB: addr=%u, memory=%p",
+                        (unsigned)addr, m->memory);
         return CHIP8_ERR_MEM_OOB;
     }
     *out_value = m->memory[addr];
@@ -50,8 +57,10 @@ Chip8Status memory_read(const Memory* m, uint16_t addr, uint8_t* out_value) {
 }
 
 Chip8Status memory_write(Memory* m, uint16_t addr, uint8_t value) {
-    if (!m) return CHIP8_ERR_NULL_ARG;
-    if (addr >= MEMORY_SIZE) {
+    CHIP8_CHECK_ARG(m);
+    if (!memory_addr_in_bounds(addr)) {
+        CHIP8_LOG_ERROR("Write RAM address OOB: addr=%u, memory=%p",
+                        (unsigned)addr, m->memory);
         return CHIP8_ERR_MEM_OOB;
     }
     m->memory[addr] = value;
@@ -59,7 +68,8 @@ Chip8Status memory_write(Memory* m, uint16_t addr, uint8_t value) {
 }
 
 Chip8Status memory_load_rom(Memory* m, const uint8_t* data, size_t size) {
-    if (!m || !data) return CHIP8_ERR_NULL_ARG;
+    CHIP8_CHECK_ARG(m);
+    CHIP8_CHECK_ARG(data);
 
     const size_t capacity = (size_t)MEMORY_SIZE - (size_t)PROGRAM_START_ADDRESS;
     if (size > capacity) {

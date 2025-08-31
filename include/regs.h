@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 typedef struct {
-    uint8_t V[TOTAL_NUM_REGS];      // 16 general purpose 8-bit registers (V0-VF)
+    uint8_t V[NUM_REGS];      // 16 general purpose 8-bit registers (V0-VF)
     
     uint16_t I;                     // 16-bit memory address register
     uint16_t PC;                    // 16-bit program counter
