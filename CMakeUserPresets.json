@@ -5,19 +5,37 @@
       "name": "msvc-ninja-debug-user",
       "inherits": "msvc-ninja-debug",
       "cacheVariables": {
-        "SDL3_DIR": "C:/Libraries/SDL3-3.2.20/cmake"
+        "SDL3_DIR": "C:/Libraries/SDL3-3.2.20/cmake",
+        "GTEST_SRC_ROOT": "C:/Libraries/googletest-1.17.0"
       }
     },
     {
       "name": "msvc-ninja-release-user",
       "inherits": "msvc-ninja-release",
       "cacheVariables": {
-        "SDL3_DIR": "C:/Libraries/SDL3-3.2.20/cmake"
+        "SDL3_DIR": "C:/Libraries/SDL3-3.2.20/cmake",
+        "GTEST_SRC_ROOT": "C:/Libraries/googletest-1.17.0"
       }
     }
   ],
   "buildPresets": [
     { "name": "build-debug-user",   "configurePreset": "msvc-ninja-debug-user" },
     { "name": "build-release-user", "configurePreset": "msvc-ninja-release-user" }
+  ],
+  "testPresets": [
+    {
+      "name": "test-debug-user",
+      "displayName": "CTest (Debug, user)",
+      "configurePreset": "msvc-ninja-debug-user",
+      "output": { "outputOnFailure": true },
+      "execution": { "jobs": 16 }
+    },
+    {
+      "name": "test-release-user",
+      "displayName": "CTest (Release, user)",
+      "configurePreset": "msvc-ninja-release-user",
+      "output": { "outputOnFailure": true },
+      "execution": { "jobs": 16 }
+    }
   ]
 }

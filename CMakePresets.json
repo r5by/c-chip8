@@ -28,5 +28,20 @@
     { "name": "build-debug",   "configurePreset": "msvc-ninja-debug" },
     { "name": "build-release", "configurePreset": "msvc-ninja-release" }
   ],
-  "testPresets": []
+  "testPresets": [
+    {
+      "name": "test-debug",
+      "displayName": "CTest (Debug)",
+      "configurePreset": "msvc-ninja-debug",
+      "output": { "outputOnFailure": true },
+      "execution": { "jobs": 16 }
+    },
+    {
+      "name": "test-release",
+      "displayName": "CTest (Release)",
+      "configurePreset": "msvc-ninja-release",
+      "output": { "outputOnFailure": true },
+      "execution": { "jobs": 16 }
+    }
+  ]
 }
