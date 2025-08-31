@@ -1,0 +1,32 @@
+{
+  "version": 8,
+  "configurePresets": [
+    {
+      "name": "msvc-ninja-debug",
+      "displayName": "MSVC x64 + Ninja (Debug)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      },
+      "environment": { "VSCMD_ARG_TGT_ARCH": "x64" }
+    },
+    {
+      "name": "msvc-ninja-release",
+      "displayName": "MSVC x64 + Ninja (Release)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      },
+      "environment": { "VSCMD_ARG_TGT_ARCH": "x64" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "build-debug",   "configurePreset": "msvc-ninja-debug" },
+    { "name": "build-release", "configurePreset": "msvc-ninja-release" }
+  ],
+  "testPresets": []
+}
