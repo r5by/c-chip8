@@ -1,7 +1,7 @@
 #include "keyboard.h"
 
 static inline bool key_in_bounds(uint8_t key) {
-    return key >= 0 && key < NUM_KEYS;
+    return key < NUM_KEYS;
 }
 
 Chip8Status keyboard_press(Keyboard* kbd, uint8_t key) {

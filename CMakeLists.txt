@@ -6,6 +6,9 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# err logging
+option(CHIP8_ENABLE_LOG "Enable Chip8 logging to stderr" OFF)
+
 # -----------------------------
 # Core library: exclude main.c to allow unit testing independently
 # -----------------------------
@@ -27,6 +30,11 @@ if (WIN32)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:chip8> $<TARGET_FILE_DIR:chip8>
     COMMAND_EXPAND_LISTS
     COMMENT "Copy runtime DLLs next to chip8.exe")
+endif()
+
+# keyboard err logging
+if (CHIP8_ENABLE_LOG)
+  target_compile_definitions(chip8_core PUBLIC CHIP8_ENABLE_LOG)
 endif()
 
 install(TARGETS chip8 RUNTIME DESTINATION bin)
