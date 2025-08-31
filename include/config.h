@@ -16,6 +16,16 @@ extern const char *EMULATOR_WINDOW_TITLE;
 #define DISPLAY_HEIGHT         32
 
 /* ============================
+ * Register configuration
+ * ============================ */
+#define TOTAL_NUM_REGS         16            // total number of registers
+
+/* ============================
+ * Stack configuration
+ * ============================ */
+#define STACK_DEPTH             16
+
+/* ============================
  * Memory configuration
  * ============================ */
 enum {

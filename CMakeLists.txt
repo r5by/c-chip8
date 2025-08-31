@@ -32,19 +32,38 @@ endif()
 install(TARGETS chip8 RUNTIME DESTINATION bin)
 
 # -----------------------------
-# Tests: GoogleTest + CTest
+# Tests: GoogleTest + CTest (auto-discover tests/tests_*.cpp)
 # -----------------------------
-include(CTest)           # Enable BUILD_TESTING option (default ON)
+include(CTest)  # Enable BUILD_TESTING option (default ON)
 if (BUILD_TESTING)
-  # Option: use local googletest source
-  # The root path should contain the googletest/ subdir and top-level CMakeLists.txt
+  # Use local googletest sources (the path must contain the "googletest/" subdir and a top-level CMakeLists.txt)
   set(GTEST_SRC_ROOT "C:/Libraries/googletest-1.17.0" CACHE PATH "Path to googletest source root")
-  add_subdirectory("${GTEST_SRC_ROOT}" "${CMAKE_BINARY_DIR}/_gtest")   # Generates gtest / gtest_main targets
+  add_subdirectory("${GTEST_SRC_ROOT}" "${CMAKE_BINARY_DIR}/_gtest")  # Provides gtest / gtest_main
 
-  add_executable(test_mem tests/test_mem.cpp)
-  target_include_directories(test_mem PRIVATE "${CMAKE_SOURCE_DIR}/include")
-  target_link_libraries(test_mem PRIVATE chip8_core gtest gtest_main)
+  # Collect all test sources under tests/ matching test_*.cpp
+  file(GLOB TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/test_*.cpp")
+
+  if (TEST_SOURCES STREQUAL "")
+    message(WARNING "No test sources found in ${CMAKE_SOURCE_DIR}/tests/test_*.cpp")
+  endif()
 
   include(GoogleTest)
-  gtest_discover_tests(test_mem)   # Automatically register TEST() cases into CTest
+
+  foreach(test_src IN LISTS TEST_SOURCES)
+    # Derive target name from filename (e.g., tests/test_mem.cpp -> test_mem)
+    get_filename_component(test_name "${test_src}" NAME_WE)
+
+    add_executable(${test_name} "${test_src}")
+    target_include_directories(${test_name} PRIVATE "${CMAKE_SOURCE_DIR}/include")
+    target_link_libraries(${test_name} PRIVATE chip8_core gtest gtest_main)
+
+    # Register with CTest and let GoogleTest discover TEST() cases automatically
+    gtest_discover_tests(${test_name}
+      WORKING_DIRECTORY $<TARGET_FILE_DIR:${test_name}>
+      DISCOVERY_MODE PRE_TEST)
+
+    # Optional: also add a direct CTest entry for the executable name
+    add_test(NAME ${test_name} COMMAND ${test_name})
+  endforeach()
 endif()
+

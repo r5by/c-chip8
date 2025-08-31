@@ -1,3 +1,3 @@
-#include "mem.h"
+#include "chip8.h"
 
 //todo

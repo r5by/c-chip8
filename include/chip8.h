@@ -1,17 +1,20 @@
-// File: include/chip8.h
 #ifndef CHIP8_H
 #define CHIP8_H
 
 #include "config.h"
-#include "memory.h"
+#include "mem.h"
+#include "regs.h"
+#include "stack.h"
 
 struct Chip8 {
+    // ram
+    Memory chip8_mem;
+
     // CPU registers
-    unsigned char V[16];  // General purpose registers V0-VF
-    unsigned short I;     // Index register
-    unsigned short pc;    // Program counter
-    unsigned short sp;    // Stack pointer
-    unsigned short stack[16]; // Stack
+    Registers chip8_regs;
+
+    // stacks
+    Stack chip8_stack;
     
 };
 
