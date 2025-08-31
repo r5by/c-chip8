@@ -1,46 +1,52 @@
 #include <string.h>   // memset
-#include <assert.h>   // assert for sanity checks
+#include <assert.h>
 
 #include "stack.h"
 #include "regs.h"
-
+#include "chip8_status.h"
 
 /*
  * CHIP-8 uses a small return-address stack.
  * The stack storage lives in `Stack`, while the stack pointer (depth) lives in `Registers::SP`.
- * This allows the CPU state (registers) to own SP while the memory block holds the words.
+ * Functions return Chip8Status for uniform error handling and optional logging.
  */
 
-void stack_init(Stack* stack, Registers* regs) {
-    assert(stack != NULL);
-    assert(regs  != NULL);
+Chip8Status stack_init(Stack* stack, Registers* regs) {
+    CHIP8_CHECK_ARG(stack);
+    CHIP8_CHECK_ARG(regs);
+
     memset(stack->stack, 0, sizeof(stack->stack));
     regs->SP = 0;  // empty stack
+    return CHIP8_OK;
 }
 
-void stack_reset(Stack* stack, Registers* regs) {
-    // Alias to init; provided for API symmetry
-    stack_init(stack, regs);
+Chip8Status stack_reset(Stack* stack, Registers* regs) {
+    return stack_init(stack, regs);
 }
 
-void stack_push(Stack* stack, Registers* regs, uint16_t value) {
-    assert(stack != NULL);
-    assert(regs  != NULL);
+Chip8Status stack_push(Stack* stack, Registers* regs, uint16_t value) {
+    CHIP8_CHECK_ARG(stack);
+    CHIP8_CHECK_ARG(regs);
 
     if (regs->SP >= STACK_DEPTH) {
-        // Overflow policy: ignore the push
-        return;
+        CHIP8_LOG_ERROR("stack overflow (SP=%u, cap=%u)",
+                        (unsigned)regs->SP, (unsigned)STACK_DEPTH);
+        return CHIP8_ERR_STACK_OVERFLOW;
     }
     stack->stack[regs->SP++] = value;
+    return CHIP8_OK;
 }
 
-uint16_t stack_pop(Stack* stack, Registers* regs) {
-    assert(stack != NULL);
-    assert(regs  != NULL);
+Chip8Status stack_pop(Stack* stack, Registers* regs, uint16_t* out_value) {
+    CHIP8_CHECK_ARG(stack);
+    CHIP8_CHECK_ARG(regs);
+    CHIP8_CHECK_ARG(out_value);
 
     if (regs->SP == 0) {
-        // Underflow policy: return 0
-        return 0;
+        CHIP8_LOG_WARN("stack underflow on pop");
+        *out_value = 0;
+        return CHIP8_ERR_STACK_UNDERFLOW;
     }
-    return stack->stack[--regs->SP];
+    *out_value = stack->stack[--regs->SP];
+    return CHIP8_OK;
 }
