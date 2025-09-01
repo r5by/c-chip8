@@ -1,11 +1,14 @@
 #include <SDL3/SDL.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>   // rand
+#include <time.h>     // time
 
 #include "keyboard.h"
 #include "chip8_status.h"
 #include "config.h"
 #include "chip8.h"
+#include "screen.h"
 
 static void sdl_die(const char *where) {
     const char *e = SDL_GetError();
@@ -42,7 +45,37 @@ static int map_sdl_key_to_chip8(SDL_Keycode kc) {
     }
 }
 
+// Draw the logical screen buffer onto the SDL renderer.
+static void draw_screen(SDL_Renderer* renderer, const Screen* scr) {
+    const uint8_t* px = screen_pixels(scr);
+    if (!px) return;
+
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    const int scale = EMULATOR_WINDOW_SCALER;
+
+    for (int y = 0; y < DISPLAY_HEIGHT; ++y) {
+        for (int x = 0; x < DISPLAY_WIDTH; ++x) {
+            if (px[y * DISPLAY_WIDTH + x]) {
+                SDL_FRect r = {
+                    (float)(x * scale),
+                    (float)(y * scale),
+                    (float)scale,
+                    (float)scale
+                };
+                SDL_RenderFillRect(renderer, &r);
+            }
+        }
+    }
+
+    SDL_RenderPresent(renderer);
+}
+
 int main(int argc, char **argv) {
+    srand((unsigned)time(NULL));
+
     struct Chip8 chip8;
     chip8_init(&chip8);
 
@@ -51,9 +84,12 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    const int win_w = DISPLAY_WIDTH  * EMULATOR_WINDOW_SCALER;
+    const int win_h = DISPLAY_HEIGHT * EMULATOR_WINDOW_SCALER;
+
     SDL_Window *window = SDL_CreateWindow(
         "Chip8 Window",
-        640, 320,
+        win_w, win_h,
         SDL_WINDOW_RESIZABLE
     );
     if (!window) { sdl_die("SDL_CreateWindow"); SDL_Quit(); return 1; }
@@ -62,54 +98,39 @@ int main(int argc, char **argv) {
     if (!renderer) { sdl_die("SDL_CreateRenderer"); SDL_DestroyWindow(window); SDL_Quit(); return 1; }
 
     Keyboard kbd = {0}; /* zero-init states */
+    Screen scr;
+    screen_init(&scr);
 
     bool running = true;
+    Uint64 last_ns = SDL_GetTicksNS();
+
     while (running) {
         SDL_Event ev;
         while (SDL_PollEvent(&ev)) {
             if (ev.type == SDL_EVENT_QUIT) {
                 running = false;
-            } else if (ev.type == SDL_EVENT_KEY_DOWN) {
-                SDL_Keycode kc = ev.key.key;          /* SDL3: 'key' holds SDL_Keycode */
-                int ck = map_sdl_key_to_chip8(kc);
-                if (ck >= 0) {
-                    Chip8Status st = keyboard_press(&kbd, (uint8_t)ck);
-                    if (st == CHIP8_OK) {
-                        printf("[key down] chip8=0x%X\n", ck);
-                    } else {
-                        CHIP8_LOG_ERROR("keyboard_press failed: %s (chip8=0x%X)",
-                                        chip8_status_str(st), ck);
-                    }
-                } else {
-                    CHIP8_LOG_WARN("unknown key pressed (SDL_Keycode=%d)", (int)kc);
-                }
-            } else if (ev.type == SDL_EVENT_KEY_UP) {
-                SDL_Keycode kc = ev.key.key;
-                int ck = map_sdl_key_to_chip8(kc);
-                if (ck >= 0) {
-                    Chip8Status st = keyboard_release(&kbd, (uint8_t)ck);
-                    if (st == CHIP8_OK) {
-                        printf("[key up  ] chip8=0x%X\n", ck);
-                    } else {
-                        CHIP8_LOG_ERROR("keyboard_release failed: %s (chip8=0x%X)",
-                                        chip8_status_str(st), ck);
-                    }
-                } else {
-                    CHIP8_LOG_WARN("unknown key released (SDL_Keycode=%d)", (int)kc);
-                }
             }
         }
 
-        /* draw something */
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);
+        // Every ~200ms, light up a random pixel
+        Uint64 now_ns = SDL_GetTicksNS();
+        if (now_ns - last_ns >= 200000000ULL) { // 200 ms
+            last_ns = now_ns;
+            uint8_t rx = (uint8_t)(rand() % DISPLAY_WIDTH);
+            uint8_t ry = (uint8_t)(rand() % DISPLAY_HEIGHT);
 
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        SDL_FRect r = {0.0f, 0.0f, 40.0f, 40.0f};
-        SDL_RenderFillRect(renderer, &r);
+            Chip8Status st = screen_set_pixel(&scr, rx, ry, 1);
+            if (st != CHIP8_OK) {
+                CHIP8_LOG_ERROR("screen_set_pixel failed: %s (x=%u,y=%u)",
+                                chip8_status_str(st), rx, ry);
+            }
+        }
 
-        SDL_RenderPresent(renderer);
-        SDL_Delay(16);
+        if (screen_consume_dirty(&scr)) {
+            draw_screen(renderer, &scr);
+        }
+
+        SDL_Delay(16); // ~60 fps pacing
     }
 
     SDL_DestroyRenderer(renderer);
