@@ -3,14 +3,15 @@
 #include <string.h>   // memset
 
 #include "chip8.h"
+#include "instr.h"
 
-void chip8_init(struct Chip8 *chip8) {
+void chip8_init(struct Chip8 *c8) {
     // Initialize the chip8 emulator
     // Set up memory, registers, and other necessary components
     // ...
-    memset(chip8, 0, sizeof(struct Chip8));
-    memory_init(&chip8->chip8_mem);
-    screen_init(&chip8->chip8_disp);
+    memset(c8, 0, sizeof(struct Chip8));
+    memory_init(&c8->chip8_mem);
+    screen_init(&c8->chip8_disp);
 }
 
 /* Helper: get file size (returns 0 on failure). */
@@ -22,8 +23,8 @@ static size_t file_size(FILE* f) {
     return (size_t)sz;
 }
 
-Chip8Status chip8_load_rom(struct Chip8* chip8, const char* filepath) {
-    CHIP8_CHECK_ARG(chip8);
+Chip8Status chip8_load_rom(struct Chip8* c8, const char* filepath) {
+    CHIP8_CHECK_ARG(c8);
     CHIP8_CHECK_ARG(filepath);
 
     FILE* fp = NULL;
@@ -63,7 +64,7 @@ Chip8Status chip8_load_rom(struct Chip8* chip8, const char* filepath) {
         return CHIP8_ERR_ROM_READ;
     }
 
-    Chip8Status st = memory_load_rom(&chip8->chip8_mem, buf, sz);
+    Chip8Status st = memory_load_rom(&c8->chip8_mem, buf, sz);
     free(buf);
     if (st != CHIP8_OK) {
         CHIP8_LOG_ERROR("memory_load_rom failed: %s", chip8_status_str(st));
@@ -114,3 +115,28 @@ void dump_n(const struct Chip8* c8,
     }
 }
 
+static inline uint16_t fetch_opcode(const struct Chip8* c8, uint16_t pc, Chip8Status* out_st) {
+    if (out_st) *out_st = CHIP8_OK;
+    if ((size_t)pc + 1u >= MEMORY_SIZE) {
+        if (out_st) *out_st = CHIP8_ERR_MEM_OOB;
+        return 0;
+    }
+    const uint8_t* m = c8->chip8_mem.memory;
+    return (uint16_t)((m[pc] << 8) | m[pc + 1]);
+}
+
+Chip8Status chip8_step(struct Chip8* c8) {
+    CHIP8_CHECK_ARG(c8);
+    Registers* regs = &c8->chip8_regs;
+
+    Chip8Status st = CHIP8_OK;
+    const uint16_t pc = regs->PC;
+    const uint16_t op = fetch_opcode(c8, pc, &st);
+    if (st != CHIP8_OK) return st;
+
+    /* step 2 */
+    regs->PC = (uint16_t)(pc + 2);
+
+    exec(op, regs, &c8->chip8_mem, &c8->chip8_disp, &c8->chip8_stack);
+    return CHIP8_OK;
+}

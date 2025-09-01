@@ -25,8 +25,9 @@ struct Chip8 {
     Screen chip8_disp;
 };
 
-void chip8_init(struct Chip8 *chip8);
-Chip8Status chip8_load_rom(struct Chip8* chip8, const char* filepath);
+void chip8_init(struct Chip8 *c8);
+Chip8Status chip8_load_rom(struct Chip8* c8, const char* filepath);
+Chip8Status chip8_step(struct Chip8* c8);
 
 void dump_n(const struct Chip8* c8,
                   uint16_t start_addr,

@@ -7,6 +7,7 @@
 #include "beep.h"
 #include "timer.h"
 #include <SDL3/SDL.h>
+#include "instr.h"
 
 static void sdl_die(const char *where) {
     const char *e = SDL_GetError();
@@ -74,18 +75,97 @@ static void draw_screen(SDL_Renderer* renderer, const Screen* scr) {
 int main(int argc, char** argv) {
     struct Chip8 chip8;
     chip8_init(&chip8);
-
-    if (argc < 2) {
-        fprintf(stderr, "Usage: %s <path/to/game.ch8>\n", argv[0]);
-        return 2;
-    }
-    Chip8Status st = chip8_load_rom(&chip8, argv[1]);
-    if (st != CHIP8_OK) {
-        fprintf(stderr, "Load failed: %s\n", chip8_status_str(st));
+    
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        sdl_die("SDL_Init(SDL_INIT_VIDEO)");
         return 1;
     }
 
-    // mem_dump(&chip8, 0x200, 0x40);
-    dump_n(&chip8, 0x200, 0x40, 8);
+    const int win_w = DISPLAY_WIDTH  * EMULATOR_WINDOW_SCALER;
+    const int win_h = DISPLAY_HEIGHT * EMULATOR_WINDOW_SCALER;
+
+    SDL_Window *window = SDL_CreateWindow(
+        "Chip8 Window",
+        win_w, win_h,
+        SDL_WINDOW_RESIZABLE
+    );
+    if (!window) { sdl_die("SDL_CreateWindow"); SDL_Quit(); return 1; }
+
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, NULL);
+    if (!renderer) { sdl_die("SDL_CreateRenderer"); SDL_DestroyWindow(window); SDL_Quit(); return 1; }
+
+    // Demo: draw glyphs 0..F at (32,32), switching every 1s (wrap-around expected)
+    const uint8_t POS_X = 27;
+    const uint8_t POS_Y = 11;            // 32 == DISPLAY_HEIGHT -> wraps to 0
+    uint8_t glyph = 0;                   // 0..15
+
+    Uint64 last_switch_ns = SDL_GetTicksNS();
+    bool running = true;
+
+    // Switch glyph every 1 second
+    while (running) {
+        SDL_Event ev;
+        while (SDL_PollEvent(&ev)) {
+            if (ev.type == SDL_EVENT_QUIT) {
+                running = false;
+            } else if (ev.type == SDL_EVENT_KEY_DOWN) {
+                SDL_Keycode kc = ev.key.key;          /* SDL3: 'key' holds SDL_Keycode */
+                int ck = map_sdl_key_to_chip8(kc);
+                if (ck >= 0) {
+                    Chip8Status st = keyboard_press(&chip8.chip8_kbd, (uint8_t)ck);
+                    if (st == CHIP8_OK) {
+                        printf("[key down] chip8=0x%X\n", ck);
+                    } else {
+                        CHIP8_LOG_ERROR("keyboard_press failed: %s (chip8=0x%X)",
+                                        chip8_status_str(st), ck);
+                    }
+                } else {
+                    CHIP8_LOG_WARN("unknown key pressed (SDL_Keycode=%d)", (int)kc);
+                }
+            } else if (ev.type == SDL_EVENT_KEY_UP) {
+                SDL_Keycode kc = ev.key.key;
+                int ck = map_sdl_key_to_chip8(kc);
+                if (ck >= 0) {
+                    Chip8Status st = keyboard_release(&chip8.chip8_kbd, (uint8_t)ck);
+                    if (st == CHIP8_OK) {
+                        printf("[key up  ] chip8=0x%X\n", ck);
+                    } else {
+                        CHIP8_LOG_ERROR("keyboard_release failed: %s (chip8=0x%X)",
+                                        chip8_status_str(st), ck);
+                    }
+                } else {
+                    CHIP8_LOG_WARN("unknown key released (SDL_Keycode=%d)", (int)kc);
+                }
+            }
+        }
+
+        // Switch glyph every 1 second
+        Uint64 now_ns = SDL_GetTicksNS();
+        if (now_ns - last_switch_ns >= 1000000000ULL) { // 1e9 ns
+            last_switch_ns = now_ns;
+
+            // Clear screen then draw next glyph from RAM fontset
+            //screen_clear(&chip8.chip8_disp);
+            exec(0x00E0, NULL, NULL, &chip8.chip8_disp, NULL);
+
+            // Fontset layout: 16 glyphs × 5 bytes each at FONT_START_ADDR
+            size_t offset = (size_t)FONT_START_ADDR + (size_t)glyph * 5u;
+            const uint8_t* sprite = &chip8.chip8_mem.memory[offset];   // uses initialized RAM fontset
+            (void)screen_draw_sprite(&chip8.chip8_disp, POS_X, POS_Y, sprite, 5);
+
+            glyph = (uint8_t)((glyph + 1) & 0x0F); // 0..15
+        }
+
+        if (screen_consume_dirty(&chip8.chip8_disp)) {
+            draw_screen(renderer, &chip8.chip8_disp);
+        }
+
+        SDL_Delay(16); // ~60 FPS
+    }
+
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+
     return 0;
 }
