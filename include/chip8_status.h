@@ -13,7 +13,9 @@ typedef enum Chip8Status {
     CHIP8_ERR_MEM_OOB,           /* memory out-of-bounds */
     CHIP8_ERR_ROM_TOO_LARGE,
     CHIP8_ERR_UNKNOWN_KEY_PRESSED,     /* invalid keypad index (not 0..15) */
-    CHIP8_ERR_PIXEL_SET_FAILURE
+    CHIP8_ERR_PIXEL_SET_FAILURE,
+    CHIP8_ERR_ROM_OPEN,            /* failed to open ROM file */
+    CHIP8_ERR_ROM_READ,            /* failed to read ROM */   
 } Chip8Status;
 
 /* Convert status to a short, stable string. */

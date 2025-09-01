@@ -23,9 +23,16 @@ struct Chip8 {
 
     // display
     Screen chip8_disp;
-    
 };
 
 void chip8_init(struct Chip8 *chip8);
+Chip8Status chip8_load_rom(struct Chip8* chip8, const char* filepath);
+
+void dump_n(const struct Chip8* c8,
+                  uint16_t start_addr,
+                  size_t   nbytes,
+                  int      words_per_line);
+#define mem_dump(c8, start_addr, nbytes) \
+    dump_n((c8), (start_addr), (nbytes), 4) /* 1 word == 2 bytes, 4 words per line by default */
 
 #endif // CHIP8_H

@@ -10,6 +10,8 @@ const char* chip8_status_str(Chip8Status s) {
         case CHIP8_ERR_ROM_TOO_LARGE:       return "ROM too large";
         case CHIP8_ERR_UNKNOWN_KEY_PRESSED: return "unknown key pressed";
         case CHIP8_ERR_PIXEL_SET_FAILURE:   return "fail at setting pixel";
+        case CHIP8_ERR_ROM_OPEN:            return "failed to open ROM file";
+        case CHIP8_ERR_ROM_READ:            return "failed to read ROM";
         default:                            return "unknown";
     }
 }
