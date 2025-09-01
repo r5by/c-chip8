@@ -5,6 +5,7 @@
 #include "keyboard.h"
 #include "chip8_status.h"
 #include "config.h"
+#include "chip8.h"
 
 static void sdl_die(const char *where) {
     const char *e = SDL_GetError();
@@ -42,6 +43,9 @@ static int map_sdl_key_to_chip8(SDL_Keycode kc) {
 }
 
 int main(int argc, char **argv) {
+    struct Chip8 chip8;
+    chip8_init(&chip8);
+
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         sdl_die("SDL_Init(SDL_INIT_VIDEO)");
         return 1;

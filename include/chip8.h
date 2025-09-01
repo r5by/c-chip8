@@ -22,4 +22,6 @@ struct Chip8 {
     
 };
 
+void chip8_init(struct Chip8 *chip8);
+
 #endif // CHIP8_H
