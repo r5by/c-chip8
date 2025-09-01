@@ -6,6 +6,7 @@
 #include "regs.h"
 #include "stack.h"
 #include "keyboard.h"
+#include "screen.h"
 
 struct Chip8 {
     // ram
@@ -19,6 +20,9 @@ struct Chip8 {
 
     // keyboard
     Keyboard chip8_kbd;
+
+    // display
+    Screen chip8_disp;
     
 };
 

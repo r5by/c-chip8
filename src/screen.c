@@ -56,16 +56,17 @@ bool screen_draw_sprite(Screen* s, uint8_t x, uint8_t y, const uint8_t* sprite, 
 
     for (uint8_t row = 0; row < n; ++row) {
         uint8_t bits = sprite[row];
-        uint8_t yy = (uint8_t)(y + row);
+        uint8_t _y = (uint8_t)(y + row);
         for (uint8_t col = 0; col < 8; ++col) {
-            if (bits & (uint8_t)(0x80u >> col)) {
-                uint8_t xx = (uint8_t)(x + col);
-                if (screen_toggle_pixel(s, xx, yy)) {
-                    collision = true;
-                }
+            if ((bits & (uint8_t)(0x80u >> col)) == 0) continue;
+
+            uint8_t _x = (uint8_t)(x + col);
+            if (screen_toggle_pixel(s, _x, _y)) {
+                collision = true;
             }
         }
     }
+    
     return collision;
 }
 
