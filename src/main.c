@@ -1,14 +1,12 @@
-#include <SDL3/SDL.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>   // rand
 #include <time.h>     // time
 
-#include "keyboard.h"
-#include "chip8_status.h"
-#include "config.h"
 #include "chip8.h"
-#include "screen.h"
+#include "beep.h"
+#include "timer.h"
+#include <SDL3/SDL.h>
 
 static void sdl_die(const char *where) {
     const char *e = SDL_GetError();
@@ -77,13 +75,25 @@ int main(int argc, char **argv) {
     struct Chip8 chip8;
     chip8_init(&chip8);
 
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
         sdl_die("SDL_Init(SDL_INIT_VIDEO)");
         return 1;
     }
 
     const int win_w = DISPLAY_WIDTH  * EMULATOR_WINDOW_SCALER;
     const int win_h = DISPLAY_HEIGHT * EMULATOR_WINDOW_SCALER;
+
+    Beeper* beeper = NULL;
+    if (!beep_init(&beeper, 330, 0.15f)) {
+        SDL_LogWarn(SDL_LOG_CATEGORY_AUDIO, "beep init failed: %s", SDL_GetError());
+    }
+
+    // 3) Set up registers and initialize timers
+    Registers regs = {0};
+    // DT: 2 seconds（~120 60Hz ticks），ST: 0.5 second（~ 30 ticks）
+    regs.DT = 120;
+    regs.ST = 30;
+    SDL_Log("Initial DT=%u, ST=%u", regs.DT, regs.ST);
 
     SDL_Window *window = SDL_CreateWindow(
         "Chip8 Window",
@@ -95,14 +105,10 @@ int main(int argc, char **argv) {
     SDL_Renderer *renderer = SDL_CreateRenderer(window, NULL);
     if (!renderer) { sdl_die("SDL_CreateRenderer"); SDL_DestroyWindow(window); SDL_Quit(); return 1; }
 
-    // Demo: draw glyphs 0..F at (32,32), switching every 1s (wrap-around expected)
-    const uint8_t POS_X = 33;
-    const uint8_t POS_Y = 61;            // 32 == DISPLAY_HEIGHT -> wraps to 0
-    uint8_t glyph = 0;                   // 0..15
-
     Uint64 last_switch_ns = SDL_GetTicksNS();
     bool running = true;
 
+    uint8_t prev_DT = regs.DT, prev_ST = regs.ST;
     while (running) {
         SDL_Event ev;
         while (SDL_PollEvent(&ev)) {
@@ -139,24 +145,27 @@ int main(int argc, char **argv) {
             }
         }
 
-        // Switch glyph every 1 second
+        // frame pass time (ns)
         Uint64 now_ns = SDL_GetTicksNS();
-        if (now_ns - last_switch_ns >= 1000000000ULL) { // 1e9 ns
-            last_switch_ns = now_ns;
+        Uint64 elapsed_ns = now_ns - last_switch_ns;
+        last_switch_ns = now_ns;
 
-            // Clear screen then draw next glyph from RAM fontset
-            screen_clear(&chip8.chip8_disp);
+        // step 60Hz timer；decides if open/close beep based on ST
+        bool start_beep = false, stop_beep = false;
+        regs_tick_timers(&regs, elapsed_ns, &start_beep, &stop_beep);
 
-            // Fontset layout: 16 glyphs × 5 bytes each at FONT_START_ADDR
-            size_t offset = (size_t)FONT_START_ADDR + (size_t)glyph * 5u;
-            const uint8_t* sprite = &chip8.chip8_mem.memory[offset];   // uses initialized RAM fontset
-            (void)screen_draw_sprite(&chip8.chip8_disp, POS_X, POS_Y, sprite, 5);
+        if (start_beep && beeper) beep_set(beeper, true);
+        if (stop_beep  && beeper) beep_set(beeper, false);
 
-            glyph = (uint8_t)((glyph + 1) & 0x0F); // 0..15
+        // print change of DT/ST
+        if (regs.DT != prev_DT || regs.ST != prev_ST) {
+            SDL_Log("DT=%u, ST=%u", regs.DT, regs.ST);
+            prev_DT = regs.DT;
+            prev_ST = regs.ST;
         }
 
-        if (screen_consume_dirty(&chip8.chip8_disp)) {
-            draw_screen(renderer, &chip8.chip8_disp);
+        if (regs.DT == 0 && regs.ST == 0) {
+            running = false;
         }
 
         SDL_Delay(16); // ~60 FPS

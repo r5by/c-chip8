@@ -17,13 +17,15 @@ list(FILTER CHIP8_ALL_C EXCLUDE REGEX ".*/main\\.c$")
 add_library(chip8_core ${CHIP8_ALL_C})
 target_include_directories(chip8_core PUBLIC "${CMAKE_SOURCE_DIR}/include")
 
+find_package(SDL3 CONFIG REQUIRED)
+target_link_libraries(chip8_core PUBLIC SDL3::SDL3)
+
 # -----------------------------
 # Executable: entry point only, links to core library + SDL3
 # -----------------------------
 add_executable(chip8 src/main.c)
 target_include_directories(chip8 PRIVATE "${CMAKE_SOURCE_DIR}/include")
-find_package(SDL3 CONFIG REQUIRED)
-target_link_libraries(chip8 PRIVATE chip8_core SDL3::SDL3)
+target_link_libraries(chip8 PRIVATE chip8_core) 
 
 if (WIN32)
   add_custom_command(TARGET chip8 POST_BUILD
