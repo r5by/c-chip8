@@ -17,7 +17,7 @@ TEST(Keyboard, DefaultZeroInitIsEnough) {
     }
 
     uint8_t key = 0xAA;
-    EXPECT_EQ(CHIP8_ERR_STACK_UNDERFLOW, keyboard_first_pressed(&k, &key));
+    EXPECT_EQ(CHIP8_ERR_NO_KEY_PRESSED, keyboard_first_pressed(&k, &key));
     EXPECT_EQ(0xAA, key); // unchanged when none pressed
 }
 
@@ -60,7 +60,7 @@ TEST(Keyboard, FirstPressedScansInOrder) {
 
     // Release 0xC; none pressed
     EXPECT_EQ(CHIP8_OK, keyboard_release(&k, 0xC));
-    EXPECT_EQ(CHIP8_ERR_STACK_UNDERFLOW, keyboard_first_pressed(&k, &key));
+    EXPECT_EQ(CHIP8_ERR_NO_KEY_PRESSED, keyboard_first_pressed(&k, &key));
     EXPECT_EQ(0xCu, key);  // unchanged
 }
 

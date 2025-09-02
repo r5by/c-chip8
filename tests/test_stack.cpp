@@ -17,9 +17,9 @@ TEST(Stack, InitResetsStorageAndSP) {
     EXPECT_EQ(0u, r.SP);
 
     uint16_t out = 0xFFFF;
-    // Pop on empty should underflow and return 0 in out parameter
+    // Pop on empty should underflow and MUST NOT change 'out'
     EXPECT_EQ(CHIP8_ERR_STACK_UNDERFLOW, stack_pop(&s, &r, &out));
-    EXPECT_EQ(0u, out);
+    EXPECT_EQ(0xFFFFu, out);
     EXPECT_EQ(0u, r.SP);
 }
 
@@ -44,10 +44,10 @@ TEST(Stack, PushPopLIFO_UpdatesSPAndReturnsStatus) {
     EXPECT_EQ(0x1234, v);
     EXPECT_EQ(0u, r.SP);
 
-    // Empty -> underflow
+    // Empty -> underflow; 'v' must remain unchanged
     v = 0xDEAD;
     EXPECT_EQ(CHIP8_ERR_STACK_UNDERFLOW, stack_pop(&s, &r, &v));
-    EXPECT_EQ(0u, v);
+    EXPECT_EQ(0xDEADu, v);
     EXPECT_EQ(0u, r.SP);
 }
 
@@ -58,11 +58,12 @@ TEST(Stack, UnderflowReturnsErrorAndKeepsSPZero) {
 
     uint16_t v = 1234;
     EXPECT_EQ(CHIP8_ERR_STACK_UNDERFLOW, stack_pop(&s, &r, &v));
-    EXPECT_EQ(0u, v);
+    EXPECT_EQ(1234u, v);
     EXPECT_EQ(0u, r.SP);
 
+    // Repeated underflow still must not touch 'v'
     EXPECT_EQ(CHIP8_ERR_STACK_UNDERFLOW, stack_pop(&s, &r, &v));
-    EXPECT_EQ(0u, v);
+    EXPECT_EQ(1234u, v);
     EXPECT_EQ(0u, r.SP);
 }
 
@@ -73,7 +74,8 @@ TEST(Stack, OverflowIsReportedAndSPClamped) {
 
     // Fill to capacity with distinct values
     for (uint16_t i = 0; i < STACK_DEPTH; ++i) {
-        ASSERT_EQ(CHIP8_OK, stack_push(&s, &r, static_cast<uint16_t>(0x1000u + i)));
+        ASSERT_EQ(CHIP8_OK, stack_push(
+            &s, &r, static_cast<uint16_t>(0x1000u + i)));
     }
     EXPECT_EQ(STACK_DEPTH, r.SP);
 
@@ -90,9 +92,9 @@ TEST(Stack, OverflowIsReportedAndSPClamped) {
     }
     EXPECT_EQ(0u, r.SP);
 
-    // Now empty: further pop underflows
+    // Now empty: further pop underflows and must not touch 'v'
     uint16_t v = 0xBEEF;
     EXPECT_EQ(CHIP8_ERR_STACK_UNDERFLOW, stack_pop(&s, &r, &v));
-    EXPECT_EQ(0u, v);
+    EXPECT_EQ(0xBEEFu, v);
     EXPECT_EQ(0u, r.SP);
 }

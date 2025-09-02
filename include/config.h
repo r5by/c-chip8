@@ -31,7 +31,8 @@ extern const char *EMULATOR_WINDOW_TITLE;
 enum {
     MEMORY_SIZE = 4096,             // ram size
     PROGRAM_START_ADDRESS = 0x200,  // program loader addr
-    FONT_START_ADDR = 0x50          // fontset conventional start addr
+    FONT_START_ADDR = 0x50,         // fontset conventional start addr
+    DEFAULT_SPRITE_HIGHT = 5u       // default height of sprite
 };
 
 /* ============================

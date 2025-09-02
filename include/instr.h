@@ -6,6 +6,7 @@
 #include "mem.h"
 #include "screen.h"
 #include "stack.h"
+#include "keyboard.h"
 
 /* Instruction field helpers */
 #define OP_NNN(op) ((uint16_t)((op) & 0x0FFF))          /* 12-bit addr   */
@@ -22,6 +23,7 @@ void exec(uint16_t opcode,
         Registers* regs,
         Memory* mem,
         Screen* screen,
-        Stack* stack);
+        Stack* stack,
+        Keyboard* keyboard);
 
 #endif /* INSTR_H */

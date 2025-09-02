@@ -137,6 +137,6 @@ Chip8Status chip8_step(struct Chip8* c8) {
     /* step 2 */
     regs->PC = (uint16_t)(pc + 2);
 
-    exec(op, regs, &c8->chip8_mem, &c8->chip8_disp, &c8->chip8_stack);
+    exec(op, regs, &c8->chip8_mem, &c8->chip8_disp, &c8->chip8_stack, &c8->chip8_kbd);
     return CHIP8_OK;
 }

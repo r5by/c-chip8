@@ -44,7 +44,7 @@ Chip8Status stack_pop(Stack* stack, Registers* regs, uint16_t* out_value) {
 
     if (regs->SP == 0) {
         CHIP8_LOG_WARN("stack underflow on pop");
-        *out_value = 0;
+        // *out_value = 0;  //don't care out value (register)
         return CHIP8_ERR_STACK_UNDERFLOW;
     }
     *out_value = stack->stack[--regs->SP];

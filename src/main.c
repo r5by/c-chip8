@@ -139,22 +139,11 @@ int main(int argc, char** argv) {
             }
         }
 
-        // Switch glyph every 1 second
-        Uint64 now_ns = SDL_GetTicksNS();
-        if (now_ns - last_switch_ns >= 1000000000ULL) { // 1e9 ns
-            last_switch_ns = now_ns;
-
-            // Clear screen then draw next glyph from RAM fontset
-            //screen_clear(&chip8.chip8_disp);
-            exec(0x00E0, NULL, NULL, &chip8.chip8_disp, NULL);
-
-            // Fontset layout: 16 glyphs × 5 bytes each at FONT_START_ADDR
-            size_t offset = (size_t)FONT_START_ADDR + (size_t)glyph * 5u;
-            const uint8_t* sprite = &chip8.chip8_mem.memory[offset];   // uses initialized RAM fontset
-            (void)screen_draw_sprite(&chip8.chip8_disp, POS_X, POS_Y, sprite, 5);
-
-            glyph = (uint8_t)((glyph + 1) & 0x0F); // 0..15
-        }
+        chip8.chip8_regs.I = FONT_START_ADDR;
+        chip8.chip8_regs.V[0x0] = 10;
+        chip8.chip8_regs.V[0x1] = 20;
+        exec(0xD015, &chip8.chip8_regs, &chip8.chip8_mem, &chip8.chip8_disp, NULL, NULL);
+        
 
         if (screen_consume_dirty(&chip8.chip8_disp)) {
             draw_screen(renderer, &chip8.chip8_disp);

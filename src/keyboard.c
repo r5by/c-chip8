@@ -39,5 +39,5 @@ Chip8Status keyboard_first_pressed(const Keyboard* kbd, uint8_t* out_key) {
             return CHIP8_OK;
         }
     }
-    return CHIP8_ERR_STACK_UNDERFLOW; /* none pressed */
+    return CHIP8_ERR_NO_KEY_PRESSED; /* none pressed */
 }
