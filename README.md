@@ -75,7 +75,7 @@ Individual test executables (e.g., test_instr.exe, test_mem.exe) live next to th
 
 - **Missing SDL3 DLLs**: run the executables from the build output folder or ensure DLLs are on `PATH`.
 
-- `Black screen`: some ROMs wait for a key (`Fx0A`). Press any mapped key (e.g., `X` for `0`).
+- **Black screen**: some ROMs wait for a key (`Fx0A`). Press any mapped key (e.g., `X` for `0`).
 
 - **Performance**: adjust `CPU_HZ` in `main.c` or window scaler in `config.h`.
 
