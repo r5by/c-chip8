@@ -30,3 +30,6 @@ build/
 *.swp
 *~
 *.bak
+
+.idea
+cmake-build-*/
